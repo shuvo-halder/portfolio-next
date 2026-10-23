@@ -1,0 +1,336 @@
+// Prisma schema for the dynamic portfolio & admin platform
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  PROFICIENT
+  ADVANCED
+  EXPERT
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
+  SPAM
+}
+
+enum StorageProvider {
+  LOCAL
+  S3
+}
+
+// -------------------------------------------------------------
+// Authentication & Security Models
+// -------------------------------------------------------------
+
+model User {
+  id               String      @id @default(uuid())
+  email            String      @unique
+  passwordHash     String
+  name             String
+  role             Role        @default(ADMIN)
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean     @default(false)
+  sessions         Session[]
+  auditLogs        AuditLog[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([sessionToken])
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// Core Profile & Site Settings
+// -------------------------------------------------------------
+
+model Profile {
+  id                  String   @id @default("singleton")
+  name                String
+  headline            String
+  bio                 String   @db.Text
+  avatarUrl           String?
+  resumeUrl           String?
+  location            String?
+  email               String
+  availabilityStatus  String   // e.g. "available", "busy", "open_to_offers"
+  availabilityMessage String?  // e.g. "Available for DevOps contracts & consulting"
+  socialLinks         Json     // Array of { platform: string, url: string, icon: string }
+  seoTitle            String?
+  seoDescription      String?  @db.Text
+  ogImageUrl          String?
+  updatedAt           DateTime @updatedAt
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  type        String   @default("string") // string, boolean, number, json
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+
+// -------------------------------------------------------------
+// Content: Projects & Tags
+// -------------------------------------------------------------
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  summary     String        @db.Text
+  description String        @db.Text // Full Markdown / technical spec
+  repoUrl     String?
+  liveUrl     String?
+  coverImage  String?
+  gallery     String[]      @default([])
+  featured    Boolean       @default(false)
+  order       Int           @default(0)
+  status      ProjectStatus @default(PUBLISHED)
+  tags        ProjectTag[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([status, order])
+}
+
+model Tag {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  slug      String       @unique
+  projects  ProjectTag[]
+  posts     PostTag[]
+  createdAt DateTime     @default(now())
+
+  @@index([slug])
+}
+
+model ProjectTag {
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+}
+
+// -------------------------------------------------------------
+// Content: Blog / Posts
+// -------------------------------------------------------------
+
+model Post {
+  id             String     @id @default(uuid())
+  title          String
+  slug           String     @unique
+  excerpt        String     @db.Text
+  content        String     @db.Text // Markdown / MDX content
+  coverImage     String?
+  readingTime    Int        @default(5)
+  status         PostStatus @default(DRAFT)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?    @db.Text
+  canonicalUrl   String?
+  tags           PostTag[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([status, publishedAt])
+}
+
+model PostTag {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+// -------------------------------------------------------------
+// Content: Skills & Categories
+// -------------------------------------------------------------
+
+model SkillCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  order     Int      @default(0)
+  visible   Boolean  @default(true)
+  skills    Skill[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+model Skill {
+  id         String        @id @default(uuid())
+  name       String
+  categoryId String
+  category   SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  iconKey    String?       // Lucide icon name or Simple Icons slug
+  level      SkillLevel    @default(PROFICIENT)
+  yearsExp   Int?
+  order      Int           @default(0)
+  visible    Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([categoryId, order])
+}
+
+// -------------------------------------------------------------
+// Content: Experience, Education, Certifications, Achievements
+// -------------------------------------------------------------
+
+model Experience {
+  id          String    @id @default(uuid())
+  company     String
+  role        String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  description String    @db.Text
+  tech        String[]  @default([])
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([order])
+}
+
+model Education {
+  id          String    @id @default(uuid())
+  institution String
+  degree      String
+  field       String
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  description String?   @db.Text
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([order])
+}
+
+model Certification {
+  id            String    @id @default(uuid())
+  title         String
+  issuer        String
+  issueDate     DateTime
+  expiryDate    DateTime?
+  credentialId  String?
+  credentialUrl String?
+  badgeImage    String?
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([order])
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  link        String?
+  icon        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}
+
+// -------------------------------------------------------------
+// Media & Contact Subsystem
+// -------------------------------------------------------------
+
+model Media {
+  id           String          @id @default(uuid())
+  filename     String          @unique
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  path         String
+  storage      StorageProvider @default(LOCAL)
+  createdAt    DateTime        @default(now())
+
+  @@index([filename])
+}
+
+model ContactMessage {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String        @db.Text
+  status    MessageStatus @default(UNREAD)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "CREATE", "UPDATE", "DELETE", "LOGIN", "REORDER"
+  entity    String   // e.g. "Project", "Post", "Profile", "Setting"
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

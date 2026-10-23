@@ -1,0 +1,410 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  Save,
+  ArrowLeft,
+  AlertCircle,
+  CheckCircle2,
+  Code2,
+  Eye,
+  Sparkles,
+} from 'lucide-react';
+import { Icons } from '@/components/ui/Icons';
+import {
+  createProjectAction,
+  updateProjectAction,
+  fetchGitHubRepoMetadataAction,
+} from '@/actions/projects';
+
+interface ProjectFormData {
+  id?: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string;
+  repoUrl: string | null;
+  liveUrl: string | null;
+  coverImage: string | null;
+  featured: boolean;
+  status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
+  tags: string;
+}
+
+export function ProjectForm({ initialData }: { initialData?: ProjectFormData }) {
+  const router = useRouter();
+  const isEditing = Boolean(initialData?.id);
+
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [slug, setSlug] = useState(initialData?.slug || '');
+  const [summary, setSummary] = useState(initialData?.summary || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [repoUrl, setRepoUrl] = useState(initialData?.repoUrl || '');
+  const [liveUrl, setLiveUrl] = useState(initialData?.liveUrl || '');
+  const [coverImage, setCoverImage] = useState(initialData?.coverImage || '');
+  const [featured, setFeatured] = useState(initialData?.featured ?? true);
+  const [status, setStatus] = useState<'PUBLISHED' | 'DRAFT' | 'ARCHIVED'>(
+    initialData?.status || 'PUBLISHED'
+  );
+  const [tags, setTags] = useState(initialData?.tags || '');
+
+  const [previewMode, setPreviewMode] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [repoInput, setRepoInput] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Auto-generate slug from title if not editing
+  function handleTitleChange(val: string) {
+    setTitle(val);
+    if (!isEditing && (!slug || slug === title.toLowerCase().replace(/[^a-z0-9]/g, '-'))) {
+      setSlug(val.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+    }
+  }
+
+  async function handleGitHubImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!repoInput.trim()) return;
+
+    setImporting(true);
+    setError(null);
+
+    const res = await fetchGitHubRepoMetadataAction(repoInput);
+    setImporting(false);
+
+    if (res?.error || !res?.data) {
+      setError(res?.error || 'Failed to import repository metadata.');
+    } else {
+      setTitle(res.data.title);
+      setSlug(res.data.slug);
+      setSummary(res.data.summary);
+      setDescription(res.data.description);
+      setRepoUrl(res.data.repoUrl);
+      setLiveUrl(res.data.liveUrl);
+      setTags(res.data.tags);
+      setImportModalOpen(false);
+      setSuccess(`Imported metadata for ${res.data.title}`);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    const fd = new FormData();
+    fd.append('title', title);
+    fd.append('slug', slug);
+    fd.append('summary', summary);
+    fd.append('description', description);
+    fd.append('repoUrl', repoUrl);
+    fd.append('liveUrl', liveUrl);
+    if (coverImage) fd.append('coverImage', coverImage);
+    if (featured) fd.append('featured', 'true');
+    fd.append('status', status);
+    fd.append('tags', tags);
+
+    let res;
+    if (isEditing && initialData?.id) {
+      res = await updateProjectAction(initialData.id, null, fd);
+    } else {
+      res = await createProjectAction(null, fd);
+    }
+
+    setSaving(false);
+
+    if (res?.error) {
+      setError(res.error);
+    } else {
+      setSuccess(isEditing ? 'Project saved successfully' : 'Project created successfully');
+      router.push('/admin/projects');
+      router.refresh();
+    }
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <Link
+          href="/admin/projects"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--muted)] hover:text-[var(--foreground)] transition-colors w-fit"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Projects</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setImportModalOpen(true)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono bg-[var(--surface-raised)] border border-[var(--border-subtle)] text-[var(--accent-cyan)] hover:bg-[var(--surface)] transition-colors w-fit"
+        >
+          <Icons.github className="w-3.5 h-3.5" />
+          <Sparkles className="w-3 h-3 text-amber-400" />
+          <span>Import from GitHub Repo</span>
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{success}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">Project Title</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="e.g. Virtualhost Automation"
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">URL Slug (Unique)</label>
+              <input
+                type="text"
+                required
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="virtualhost-automation"
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">Summary / Tagline</label>
+            <input
+              type="text"
+              required
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="Production-grade virtual host manager for Apache & Nginx on Ubuntu/Debian"
+              className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">GitHub Repository URL</label>
+              <input
+                type="url"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/shuvo-halder/..."
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">Live Demo / Docs URL (Optional)</label>
+              <input
+                type="url"
+                value={liveUrl}
+                onChange={(e) => setLiveUrl(e.target.value)}
+                placeholder="https://..."
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">Tech Tags (Comma separated)</label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="Bash, Nginx, Apache, systemd, Linux"
+              className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div>
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">Publish Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'PUBLISHED' | 'DRAFT' | 'ARCHIVED')}
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+              >
+                <option value="PUBLISHED">PUBLISHED (Visible)</option>
+                <option value="DRAFT">DRAFT (Unlisted)</option>
+                <option value="ARCHIVED">ARCHIVED</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-[var(--muted)] mb-1.5">Cover Image URL (Optional)</label>
+              <input
+                type="text"
+                value={coverImage}
+                onChange={(e) => setCoverImage(e.target.value)}
+                placeholder="/uploads/... or https://..."
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center pt-6">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-[var(--foreground)]">
+                <input
+                  type="checkbox"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                  className="rounded bg-[var(--surface-raised)] border-[var(--border-subtle)] text-[var(--accent-emerald)]"
+                />
+                <span>Feature on Homepage Bento</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Markdown Specification Editor & Live Preview */}
+        <div className="p-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
+              Architecture & Technical Specification (Markdown)
+            </label>
+            <div className="flex items-center gap-1 border border-[var(--border-subtle)] p-0.5 rounded-md bg-[var(--surface-raised)]">
+              <button
+                type="button"
+                onClick={() => setPreviewMode(false)}
+                className={`px-2.5 py-1 text-xs font-mono rounded flex items-center gap-1 transition-colors ${
+                  !previewMode ? 'bg-[var(--surface)] text-[var(--foreground)] font-bold' : 'text-[var(--muted)]'
+                }`}
+              >
+                <Code2 className="w-3 h-3" />
+                <span>Write</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode(true)}
+                className={`px-2.5 py-1 text-xs font-mono rounded flex items-center gap-1 transition-colors ${
+                  previewMode ? 'bg-[var(--surface)] text-[var(--foreground)] font-bold' : 'text-[var(--muted)]'
+                }`}
+              >
+                <Eye className="w-3 h-3" />
+                <span>Preview</span>
+              </button>
+            </div>
+          </div>
+
+          {!previewMode ? (
+            <textarea
+              required
+              rows={14}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="### Architecture Overview&#10;&#10;Detailed system diagram, failure modes, benchmarks, installation snippet..."
+              className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg p-3 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none font-mono leading-relaxed resize-y"
+            />
+          ) : (
+            <div className="p-4 rounded-lg bg-[var(--surface-raised)] border border-[var(--border-subtle)] min-h-[300px] text-xs font-mono text-[var(--foreground)] whitespace-pre-wrap leading-relaxed">
+              {description || <span className="text-[var(--muted)] italic">No description written yet.</span>}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <Link
+            href="/admin/projects"
+            className="px-4 py-2 rounded-lg text-xs font-mono text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--border-subtle)]"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-mono font-semibold bg-[var(--accent-emerald)] text-slate-950 hover:bg-[var(--accent-emerald)]/90 transition-all disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>{saving ? 'Saving Project...' : isEditing ? 'Save Changes' : 'Publish Project'}</span>
+          </button>
+        </div>
+      </form>
+
+      {/* GitHub Repository Importer Modal */}
+      {importModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+              <div className="flex items-center gap-2">
+                <Icons.github className="w-4 h-4 text-[var(--accent-emerald)]" />
+                <h3 className="text-sm font-bold font-mono text-[var(--foreground)]">Import from GitHub</h3>
+              </div>
+              <button
+                onClick={() => setImportModalOpen(false)}
+                className="text-xs font-mono text-[var(--muted)] hover:text-[var(--foreground)]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs font-mono text-[var(--muted)] leading-relaxed">
+              Enter any public repository name or URL. The importer will fetch title, description, language tags, and the complete README file.
+            </p>
+
+            <form onSubmit={handleGitHubImport} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono text-[var(--muted)] mb-1">
+                  Repo Name or Full URL
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={repoInput}
+                  onChange={(e) => setRepoInput(e.target.value)}
+                  placeholder="e.g. shuvo-halder/nginx-inspector"
+                  className="w-full bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:border-[var(--accent-emerald)] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setImportModalOpen(false)}
+                  className="px-4 py-2 rounded text-xs font-mono text-[var(--muted)] hover:text-[var(--foreground)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={importing}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-xs font-mono font-semibold bg-[var(--accent-emerald)] text-slate-950 disabled:opacity-50"
+                >
+                  {importing ? (
+                    <span>Fetching Metadata...</span>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Fetch & Populate</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

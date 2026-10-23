@@ -6,11 +6,27 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import { featuredProjects } from "@/data/projects";
 import { Icons } from "@/components/ui/Icons";
 
-export function ProjectsSection() {
+interface DbProjectItem {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description?: string;
+  repoUrl?: string | null;
+  liveUrl?: string | null;
+  featured?: boolean;
+  tags: Array<{ tag: { name: string } }>;
+}
+
+export function ProjectsSection({
+  projects,
+}: {
+  projects?: DbProjectItem[];
+} = {}) {
   const [filter, setFilter] = React.useState<string>("all");
 
   const categories = [
-    { id: "all", label: "ALL_SYSTEMS (6)" },
+    { id: "all", label: "ALL_SYSTEMS" },
     { id: "automation", label: "AUTOMATION" },
     { id: "security", label: "SECURITY" },
     { id: "systems", label: "SYSTEMS" },
@@ -18,10 +34,32 @@ export function ProjectsSection() {
     { id: "networking", label: "NETWORKING" },
   ];
 
+  const projectItems = React.useMemo(() => {
+    if (projects && projects.length > 0) {
+      return projects.map((p) => {
+        const fallback = featuredProjects.find((fp) => fp.slug === p.slug);
+        return {
+          slug: p.slug,
+          title: p.title,
+          category: fallback?.category || "systems",
+          language: fallback?.language || "Shell",
+          tagline: p.summary,
+          problem: fallback?.problem || "Legacy manual server administration overhead.",
+          solution: fallback?.solution || p.summary,
+          impact: fallback?.impact || "Production automation with deterministic rollback.",
+          githubUrl: p.repoUrl || fallback?.githubUrl || "https://github.com/shuvo-halder",
+          demoUrl: p.liveUrl || fallback?.demoUrl,
+          techTags: p.tags && p.tags.length > 0 ? p.tags.map((t) => t.tag.name) : fallback?.techTags || [],
+        };
+      });
+    }
+    return featuredProjects;
+  }, [projects]);
+
   const filtered = React.useMemo(() => {
-    if (filter === "all") return featuredProjects;
-    return featuredProjects.filter((p) => p.category === filter);
-  }, [filter]);
+    if (filter === "all") return projectItems;
+    return projectItems.filter((p) => p.category === filter);
+  }, [filter, projectItems]);
 
   return (
     <section id="projects" className="py-16 md:py-24 border-t border-border/80">

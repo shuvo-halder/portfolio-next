@@ -2,7 +2,21 @@ import * as React from "react";
 import { ShieldCheck, GraduationCap, Building2, Terminal, Cpu, ArrowUpRight } from "lucide-react";
 import { profileData } from "@/data/content";
 
-export function AboutSection() {
+export function AboutSection({
+  profile,
+}: {
+  profile?: {
+    name?: string;
+    bio?: string;
+    headline?: string;
+    location?: string | null;
+    email?: string;
+  };
+} = {}) {
+  const bioParagraphs = profile?.bio
+    ? profile.bio.split('\n\n').filter(Boolean)
+    : profileData.summary;
+  const name = profile?.name || profileData.name;
   return (
     <section id="about" className="py-16 md:py-24 border-t border-border/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
@@ -31,10 +45,10 @@ export function AboutSection() {
                 <span>WHO_I_AM // SYSTEM_ENGINEER</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                Hi, I&apos;m Shuvo Halder — Systems Engineer & Open-Source Author.
+                Hi, I&apos;m {name} — Systems Engineer & Open-Source Author.
               </h3>
               <div className="space-y-3 text-sm text-muted font-sans leading-relaxed">
-                {profileData.summary.map((paragraph, idx) => (
+                {bioParagraphs.map((paragraph, idx) => (
                   <p key={idx}>{paragraph}</p>
                 ))}
               </div>

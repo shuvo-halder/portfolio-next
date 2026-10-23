@@ -10,17 +10,26 @@ import { CertificationsSection } from "@/components/sections/CertificationsSecti
 import { BlogSection } from "@/components/sections/BlogSection";
 import { ContactSection } from "@/components/sections/ContactSection";
 import { GithubSectionSkeleton, BlogSectionSkeleton } from "@/components/sections/Skeletons";
+import { getProfile, getSkillCategories, getFeaturedProjects } from "@/lib/db/queries";
 
-export default function Home() {
+export const instant = false;
+
+export default async function Home() {
+  const [profile, categories, projects] = await Promise.all([
+    getProfile(),
+    getSkillCategories(),
+    getFeaturedProjects(),
+  ]);
+
   return (
     <div className="space-y-12 pb-20">
-      <HeroSection />
+      <HeroSection profile={profile} />
 
-      <AboutSection />
+      <AboutSection profile={profile} />
 
-      <SkillsSection />
+      <SkillsSection categories={categories} />
 
-      <ProjectsSection />
+      <ProjectsSection projects={projects} />
 
       <section id="pipeline" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <PipelineDiagram />

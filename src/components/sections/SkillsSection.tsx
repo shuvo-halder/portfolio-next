@@ -3,10 +3,29 @@
 import * as React from "react";
 import { Cpu } from "lucide-react";
 import { skillCategories } from "@/data/skills";
-import { ProficiencyLevel } from "@/types/content";
 
-export function SkillsSection() {
+interface SkillItem {
+  id: string;
+  name: string;
+  level: string;
+  featured?: boolean;
+  description?: string;
+}
+
+interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  skills: SkillItem[];
+}
+
+export function SkillsSection({
+  categories,
+}: {
+  categories?: CategoryItem[];
+} = {}) {
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
+  const sourceCategories = categories || (skillCategories as unknown as CategoryItem[]);
 
   const filterTabs = [
     { id: "all", label: "ALL_SKILLS" },
@@ -20,13 +39,15 @@ export function SkillsSection() {
   ];
 
   const displayedCategories = React.useMemo(() => {
-    if (selectedCategory === "all") return skillCategories;
-    return skillCategories.filter((c) => c.id === selectedCategory);
-  }, [selectedCategory]);
+    if (selectedCategory === "all") return sourceCategories;
+    return sourceCategories.filter((c) => c.id === selectedCategory);
+  }, [selectedCategory, sourceCategories]);
 
-  const getLevelBadge = (level: ProficiencyLevel) => {
-    switch (level) {
+  const getLevelBadge = (level: string) => {
+    const norm = (level || "").toLowerCase();
+    switch (norm) {
       case "production":
+      case "expert":
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-accent-emerald/15 text-accent-emerald border border-accent-emerald/30">
             PROD
@@ -39,15 +60,23 @@ export function SkillsSection() {
           </span>
         );
       case "intermediate":
+      case "proficient":
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-muted/20 text-muted border border-border">
-            INTERMEDIATE
+            PROFICIENT
           </span>
         );
       case "planned":
+      case "beginner":
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-accent-amber/15 text-accent-amber border border-accent-amber/30">
             EVAL / ROADMAP
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-muted/20 text-muted border border-border">
+            {level}
           </span>
         );
     }

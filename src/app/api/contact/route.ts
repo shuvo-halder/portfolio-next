@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { prisma } from "@/lib/db/client";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
@@ -51,6 +52,18 @@ export async function POST(req: NextRequest) {
         message: "Message processed successfully.",
       });
     }
+
+    // Persist into PostgreSQL ContactMessage table
+    await prisma.contactMessage.create({
+      data: {
+        name,
+        email,
+        subject,
+        message,
+        ipAddress: ip,
+        userAgent: req.headers.get("user-agent") || undefined,
+      },
+    }).catch((err) => console.warn("ContactMessage DB insert error:", err));
 
     // 4. Dispatch Email if RESEND_API_KEY is configured
     if (process.env.RESEND_API_KEY) {

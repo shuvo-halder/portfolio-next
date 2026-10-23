@@ -16,7 +16,7 @@ async function run() {
 
   console.log("Navigating to http://localhost:3000 (Desktop)...");
   await desktopPage.goto("http://localhost:3000", { waitUntil: "networkidle" });
-  await desktopPage.waitForTimeout(1500);
+  await desktopPage.waitForTimeout(1000);
 
   // Desktop Hero screenshot
   console.log("Capturing desktop-hero.png...");
@@ -27,8 +27,8 @@ async function run() {
 
   // Desktop Pipeline
   console.log("Capturing desktop-pipeline.png...");
-  const pipelineEl = await desktopPage.locator("#pipeline");
-  if (await pipelineEl.count() > 0) {
+  const pipelineEl = desktopPage.locator("#pipeline");
+  if ((await pipelineEl.count()) > 0) {
     await pipelineEl.screenshot({
       path: path.join(ARTIFACT_DIR, "desktop-pipeline.png"),
     });
@@ -36,8 +36,8 @@ async function run() {
 
   // Desktop Projects
   console.log("Capturing desktop-projects.png...");
-  const projectsEl = await desktopPage.locator("#projects");
-  if (await projectsEl.count() > 0) {
+  const projectsEl = desktopPage.locator("#projects");
+  if ((await projectsEl.count()) > 0) {
     await projectsEl.screenshot({
       path: path.join(ARTIFACT_DIR, "desktop-projects.png"),
     });
@@ -45,8 +45,8 @@ async function run() {
 
   // Desktop GitHub Activity
   console.log("Capturing desktop-activity.png...");
-  const activityEl = await desktopPage.locator("#activity");
-  if (await activityEl.count() > 0) {
+  const activityEl = desktopPage.locator("#activity");
+  if ((await activityEl.count()) > 0) {
     await activityEl.screenshot({
       path: path.join(ARTIFACT_DIR, "desktop-activity.png"),
     });
@@ -67,11 +67,31 @@ async function run() {
   // Navigate to Project Detail route
   console.log("Navigating to /projects/virtualhost-automation...");
   await desktopPage.goto("http://localhost:3000/projects/virtualhost-automation", { waitUntil: "networkidle" });
-  await desktopPage.waitForTimeout(1000);
+  await desktopPage.waitForTimeout(800);
   console.log("Capturing desktop-project-detail.png...");
   await desktopPage.screenshot({
     path: path.join(ARTIFACT_DIR, "desktop-project-detail.png"),
     clip: { x: 0, y: 0, width: 1440, height: 950 },
+  });
+
+  // Navigate to Blog route
+  console.log("Navigating to /blog...");
+  await desktopPage.goto("http://localhost:3000/blog", { waitUntil: "networkidle" });
+  await desktopPage.waitForTimeout(800);
+  console.log("Capturing desktop-blog.png...");
+  await desktopPage.screenshot({
+    path: path.join(ARTIFACT_DIR, "desktop-blog.png"),
+    clip: { x: 0, y: 0, width: 1440, height: 850 },
+  });
+
+  // Navigate to Admin Login route
+  console.log("Navigating to /admin/login...");
+  await desktopPage.goto("http://localhost:3000/admin/login", { waitUntil: "networkidle" });
+  await desktopPage.waitForTimeout(800);
+  console.log("Capturing desktop-admin-login.png...");
+  await desktopPage.screenshot({
+    path: path.join(ARTIFACT_DIR, "desktop-admin-login.png"),
+    clip: { x: 0, y: 0, width: 1440, height: 850 },
   });
 
   await desktopContext.close();
@@ -88,7 +108,7 @@ async function run() {
 
   console.log("Navigating to http://localhost:3000 (Mobile)...");
   await mobilePage.goto("http://localhost:3000", { waitUntil: "networkidle" });
-  await mobilePage.waitForTimeout(1500);
+  await mobilePage.waitForTimeout(1000);
 
   console.log("Capturing mobile-hero.png...");
   await mobilePage.screenshot({
@@ -96,13 +116,23 @@ async function run() {
     clip: { x: 0, y: 0, width: 390, height: 844 },
   });
 
-  const mobileProjects = await mobilePage.locator("#projects");
-  if (await mobileProjects.count() > 0) {
+  const mobileProjects = mobilePage.locator("#projects");
+  if ((await mobileProjects.count()) > 0) {
     console.log("Capturing mobile-projects.png...");
     await mobileProjects.screenshot({
       path: path.join(ARTIFACT_DIR, "mobile-projects.png"),
     });
   }
+
+  // Mobile Admin Login
+  console.log("Navigating to /admin/login (Mobile)...");
+  await mobilePage.goto("http://localhost:3000/admin/login", { waitUntil: "networkidle" });
+  await mobilePage.waitForTimeout(800);
+  console.log("Capturing mobile-admin-login.png...");
+  await mobilePage.screenshot({
+    path: path.join(ARTIFACT_DIR, "mobile-admin-login.png"),
+    clip: { x: 0, y: 0, width: 390, height: 844 },
+  });
 
   await mobileContext.close();
   await browser.close();

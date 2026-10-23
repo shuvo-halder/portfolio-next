@@ -1,0 +1,118 @@
+import { TimelineItem, Achievement } from "@/types/content";
+
+export const timelineItems: TimelineItem[] = [
+  {
+    id: "binrecon-corp",
+    period: "2024 - Present",
+    role: "Systems Engineer & Contributor",
+    organization: "BinRecon Corp.",
+    location: "Remote / binrecon.io",
+    description: [
+      "Contributing to systems engineering, infrastructure automation, and internal server topologies at BinRecon Corp.",
+      "Developing and testing automated server deployment scripts, email delivery architecture, and containerized microservices.",
+      "Maintaining high availability and security hardening standards across Linux virtual machines.",
+    ],
+    skills: ["Linux", "Nginx", "Docker", "Bash Automation", "Security Hardening"],
+    type: "organization",
+  },
+  {
+    id: "opensource-author",
+    period: "2023 - Present",
+    role: "Open Source Systems Author",
+    organization: "GitHub / Community",
+    location: "Global",
+    description: [
+      "Authored production-grade Linux sysadmin utilities: virtualhost-automation, certbot-smart-manager, and log-archive-tool.",
+      "Built DRMCS (Disaster Response Mesh Communication System) in Go and Python for decentralized crisis communication.",
+      "Developed CorePanel, an unprivileged VPS management plane with Unix socket privilege separation.",
+      "Published technical guides on Dev.to on automating virtual hosts and system administration workflows.",
+    ],
+    skills: ["Bash 4.0+", "Python", "Go", "systemd", "Certbot", "OpenSSL", "Docker"],
+    type: "open-source",
+  },
+  {
+    id: "education-btech",
+    period: "Ongoing",
+    role: "Undergraduate Student (B.Tech)",
+    organization: "Computer Science & Engineering",
+    description: [
+      "Focusing on Operating Systems, Computer Networks, Distributed Systems, Cryptography, and Software Engineering.",
+      "Practical experimentation in Linux kernel interfaces, network socket programming, and concurrent daemon architecture.",
+    ],
+    skills: ["Operating Systems", "Computer Networks", "Data Structures", "Algorithms", "Network Protocols"],
+    type: "education",
+  },
+  {
+    id: "career-experience-placeholder",
+    period: "Upcoming / Available",
+    role: "DevOps Engineer / System Administrator",
+    organization: "// TODO: fill in your next role or internship",
+    description: [
+      "Ready to bring automation-first infrastructure engineering, CI/CD pipeline reliability, and Linux systems hardening to forward-thinking engineering teams.",
+    ],
+    skills: ["DevOps", "Infrastructure as Code", "Site Reliability", "Continuous Delivery"],
+    type: "work",
+    isPlaceholder: true,
+  },
+];
+
+export const achievementsData: Achievement[] = [
+  {
+    id: "pull-shark-bronze",
+    title: "Pull Shark (x2 Bronze)",
+    badgeUrl: "https://github.githubassets.com/assets/pull-shark-bronze-a37accb528d1.png",
+    tier: "x2 Bronze",
+    description: "Merged multiple pull requests across open-source repositories.",
+    source: "github",
+    link: "https://github.com/shuvo-halder?achievement=pull-shark&tab=achievements",
+  },
+  {
+    id: "starstruck",
+    title: "Starstruck",
+    badgeUrl: "https://github.githubassets.com/assets/starstruck-default-b6610abad518.png",
+    description: "Created repositories that caught the attention of the developer community.",
+    source: "github",
+    link: "https://github.com/shuvo-halder?achievement=starstruck&tab=achievements",
+  },
+  {
+    id: "quickdraw",
+    title: "Quickdraw",
+    badgeUrl: "https://github.githubassets.com/assets/quickdraw-default-39c6aec8ff89.png",
+    description: "Closed an issue or pull request within 5 minutes of opening.",
+    source: "github",
+    link: "https://github.com/shuvo-halder?achievement=quickdraw&tab=achievements",
+  },
+  {
+    id: "yolo",
+    title: "YOLO",
+    badgeUrl: "https://github.githubassets.com/assets/yolo-default-be0bbff04951.png",
+    description: "Merged a pull request without code review.",
+    source: "github",
+    link: "https://github.com/shuvo-halder?achievement=yolo&tab=achievements",
+  },
+  {
+    id: "hackerrank-badge",
+    title: "HackerRank Problem Solver",
+    badgeUrl: "",
+    description: "Algorithmic problem solving and coding challenges on HackerRank.",
+    source: "hackerrank",
+    link: "https://www.hackerrank.com/profile/shuvohalder_1331",
+  },
+  {
+    id: "huggingface-models",
+    title: "Hugging Face Contributor",
+    badgeUrl: "",
+    description: "Published 4 models and 3 datasets for machine learning research.",
+    source: "huggingface",
+    link: "https://huggingface.co/shuvo-halder",
+  },
+  {
+    id: "cert-placeholder-1",
+    title: "Linux / Cloud Certification",
+    badgeUrl: "",
+    description: "// TODO: Add your LPIC-1, RHCSA, CKA, or AWS Solutions Architect certification here.",
+    source: "certification",
+    link: "#",
+    isPlaceholder: true,
+  },
+];

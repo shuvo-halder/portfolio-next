@@ -47,7 +47,7 @@
     "eslint-config-next": "16.4.2",
     "playwright": "^1.64.1",
     "prettier": "^3.9.10",
-    "prisma": "^6.19.3",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
